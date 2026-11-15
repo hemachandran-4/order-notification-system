@@ -1,6 +1,7 @@
 package com.hemachandran.notificationservice.service;
 
 import com.hemachandran.notificationservice.event.OrderCreatedEvent;
+import com.hemachandran.notificationservice.exception.EmailDeliveryException;
 import com.hemachandran.notificationservice.exception.NotificationNotFoundException;
 import com.hemachandran.notificationservice.model.Notification;
 import com.hemachandran.notificationservice.model.NotificationStatus;
@@ -26,6 +27,11 @@ public class NotificationService {
         String message = "Hi! Your order #%d for %s has been received."
                 .formatted(event.orderId(), event.total());
 
+        if (event.customerEmail().endsWith("@fail.com")) {
+            log.warn("Email delivery failed for order {} ({})", event.orderId(), event.customerEmail());
+            throw new EmailDeliveryException("Simulated SMTP failure for " + event.customerEmail());
+        }
+        
         // Simulated email: in a real system this would call SMTP / SendGrid
         log.info("📧 Sending email to {}: {}", event.customerEmail(), message);
 
