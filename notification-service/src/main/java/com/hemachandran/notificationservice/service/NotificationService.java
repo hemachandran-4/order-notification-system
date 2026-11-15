@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,13 @@ public class NotificationService {
     private final NotificationRepository repository;
 
     @Transactional
-    public Notification sendAndRecord(OrderCreatedEvent event) {
+    public void sendAndRecord(OrderCreatedEvent event) {
+        // Layer 1: fast path for the common duplicate case
+        if (repository.existsByOrderId(event.orderId())) {
+            log.warn("Duplicate event for order {}, skipping", event.orderId());
+            return;
+        }
+
         String message = "Hi! Your order #%d for %s has been received."
                 .formatted(event.orderId(), event.total());
 
@@ -31,8 +38,7 @@ public class NotificationService {
             log.warn("Email delivery failed for order {} ({})", event.orderId(), event.customerEmail());
             throw new EmailDeliveryException("Simulated SMTP failure for " + event.customerEmail());
         }
-        
-        // Simulated email: in a real system this would call SMTP / SendGrid
+
         log.info("📧 Sending email to {}: {}", event.customerEmail(), message);
 
         Notification notification = Notification.builder()
@@ -42,7 +48,12 @@ public class NotificationService {
                 .status(NotificationStatus.SENT)
                 .build();
 
-        return repository.save(notification);
+        // Layer 2: the unique constraint is the final guard against races
+        try {
+            repository.saveAndFlush(notification);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate event for order {} caught by unique constraint, skipping", event.orderId());
+        }
     }
 
     @Transactional(readOnly = true)
