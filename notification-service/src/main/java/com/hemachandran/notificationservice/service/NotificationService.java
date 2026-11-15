@@ -1,11 +1,16 @@
 package com.hemachandran.notificationservice.service;
 
 import com.hemachandran.notificationservice.event.OrderCreatedEvent;
+import com.hemachandran.notificationservice.exception.NotificationNotFoundException;
 import com.hemachandran.notificationservice.model.Notification;
 import com.hemachandran.notificationservice.model.NotificationStatus;
 import com.hemachandran.notificationservice.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,5 +37,18 @@ public class NotificationService {
                 .build();
 
         return repository.save(notification);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Notification> findAll(Long orderId) {
+        if (orderId != null) {
+            return repository.findByOrderId(orderId);
+        }
+        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @Transactional(readOnly = true)
+    public Notification getById(Long id) {
+        return repository.findById(id).orElseThrow(() -> new NotificationNotFoundException(id));
     }
 }
