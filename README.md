@@ -133,6 +133,5 @@ mvn verify        # spins up real MySQL and Kafka via Testcontainers
 
 ## 👤 Author
 
-**Your Name** · [LinkedIn](https://linkedin.com/in/YOUR_PROFILE) · [GitHub](https://github.com/YOUR_USERNAME)
+**Hemachandran** · [LinkedIn](https://www.linkedin.com/in/hemachandran-j4848/) · [GitHub](https://github.com/hemachandran-4)
 
-⭐ If you found this useful, consider starring the repo!
